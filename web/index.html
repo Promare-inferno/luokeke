@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>洛可可</title>
+<style>
+/* ============================================================
+   想调外观，只动这一块。下面的代码不用管。
+   ============================================================ */
+:root{
+  --紫: #b98cd9;              /* 她的主色，名字牌、边框 */
+  --粉: #e8a0c8;              /* 点缀色，说话时闪一下 */
+  --墨: #17101d;              /* 底部压暗的底色 */
+  --字: #f2e9f5;              /* 正文颜色 */
+  --名字大小: 30px;            /* 头上那个名字牌的字号 */
+  --对话大小: 19px;            /* 正文的字号 */
+  --行距: 1.9;                /* 正文行距，她说话慢，别太挤 */
+  --立绘位置: center 30%;      /* 图聚焦在哪。想看她脸就 30%，看全身就 center */
+  --暗度: 0.75;               /* 底部压多黑，0 到 1 */
+}
+
+/* ============================================================
+   以下不用动
+   ============================================================ */
+*{ box-sizing: border-box; margin: 0; padding: 0; }
+html, body{ height: 100%; }
+
+body{
+  /* 立绘铺满整个窗口，位置由 --立绘位置 决定 */
+  background: url("../assets/bg.jpg") var(--立绘位置) / cover no-repeat fixed;
+  background-color: var(--墨);
+
+  font-family: "Noto Serif SC", "思源宋体", "宋体", serif;
+  color: var(--字);
+  overflow: hidden;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;   /* 内容贴底，上面留给她 */
+}
+
+/* 一层从上到下的黑纱，保证字在图上看得清 */
+body::before{
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(23,16,29,0.05) 0%,
+    rgba(23,16,29,calc(var(--暗度) * 0.35)) 45%,
+    rgba(23,16,29,calc(var(--暗度) * 0.9)) 75%,
+    rgba(23,16,29,var(--暗度)) 100%
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ---- 名字牌 ---- */
+.nameplate{
+  position: relative;
+  z-index: 1;
+  padding: 0 40px 6px;
+  font-size: var(--名字大小);
+  letter-spacing: 0.18em;
+  color: var(--紫);
+  text-shadow: 0 0 18px rgba(185,140,217,0.55);
+}
+
+/* ---- 对话区 ---- */
+.dialogue{
+  position: relative;
+  z-index: 1;
+  padding: 0 40px 18px;
+  min-height: 130px;
+  max-height: 42vh;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--紫) transparent;
+}
+
+.line{
+  font-size: var(--对话大小);
+  line-height: var(--行距);
+  margin-bottom: 14px;
+  opacity: 0;
+  animation: 起 0.5s ease forwards;
+}
+
+@keyframes 起{
+  from{ opacity: 0; transform: translateY(8px); }
+  to  { opacity: 1; transform: translateY(0); }
+}
+
+/* 她说的 */
+.line.her{
+  color: var(--字);
+  padding-left: 16px;
+  border-left: 2px solid var(--紫);
+}
+
+/* 你说的 */
+.line.you{
+  color: rgba(242,233,245,0.62);
+  text-align: right;
+  font-size: calc(var(--对话大小) - 2px);
+}
+
+/* 思考中，三个点在闪 */
+.line.thinking{
+  color: var(--紫);
+  letter-spacing: 0.3em;
+  animation: 呼吸 1.4s ease-in-out infinite;
+}
+
+@keyframes 呼吸{
+  0%, 100%{ opacity: 0.35; }
+  50%     { opacity: 1; }
+}
+
+/* ---- 输入区 ---- */
+.inputbar{
+  position: relative;
+  z-index: 1;
+  display: flex;
+  gap: 12px;
+  padding: 16px 40px 26px;
+  border-top: 1px solid rgba(185,140,217,0.22);
+  background: rgba(23,16,29,0.45);
+  backdrop-filter: blur(8px);
+}
+
+.inputbar input{
+  flex: 1;
+  padding: 12px 16px;
+  font-family: inherit;
+  font-size: var(--对话大小);
+  color: var(--字);
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(185,140,217,0.3);
+  border-radius: 6px;
+  outline: none;
+  transition: border-color 0.25s, box-shadow 0.25s;
+}
+
+.inputbar input:focus{
+  border-color: var(--紫);
+  box-shadow: 0 0 0 3px rgba(185,140,217,0.15);
+}
+
+.inputbar input::placeholder{
+  color: rgba(242,233,245,0.35);
+}
+
+.inputbar button{
+  padding: 12px 26px;
+  font-family: inherit;
+  font-size: var(--对话大小);
+  letter-spacing: 0.1em;
+  color: var(--墨);
+  background: var(--紫);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.25s, transform 0.1s;
+}
+
+.inputbar button:hover{ background: var(--粉); }
+.inputbar button:active{ transform: scale(0.97); }
+
+/* ---- 右上角那个「忘记」 ---- */
+.forget{
+  position: fixed;
+  top: 18px;
+  right: 22px;
+  z-index: 2;
+  padding: 7px 16px;
+  font-family: inherit;
+  font-size: 14px;
+  letter-spacing: 0.22em;
+  color: rgba(242,233,245,0.5);
+  background: rgba(23,16,29,0.3);
+  border: 1px solid rgba(185,140,217,0.25);
+  border-radius: 999px;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+  opacity: 0.45;
+  transition: opacity 0.3s, color 0.3s, border-color 0.3s;
+}
+
+.forget:hover{
+  opacity: 1;
+  color: var(--粉);
+  border-color: var(--粉);
+}
+
+.forget:active{ transform: scale(0.96); }
+
+/* 系统留言，比她说的话淡 */
+.line.sys{
+  color: rgba(242,233,245,0.4);
+  font-size: calc(var(--对话大小) - 3px);
+  letter-spacing: 0.1em;
+  text-align: center;
+}
+</style>
+</head>
+
+<body>
+
+  <!-- 她的名字。想改成别的称呼，直接改这行字 -->
+  <div class="nameplate">洛 可 可</div>
+
+  <!-- 右上角。点一下，她就忘了之前说过的话 -->
+  <button class="forget" id="forget">忘记</button>
+
+  <!-- 对话区。现在里面是假话，等接上后端就由她来说 -->
+  <div class="dialogue" id="dialogue">
+    <div class="line her">唔姆，我是来自维多利亚时代的守护文明——托拉创始人洛可可，敢问阁下如何称呼？</div>
+    <div class="line you">……洛可可你好。</div>
+    <div class="line her">这近两百年来想办法讨好我的人很多，他们大多想要探寻我长生不死的秘密，阁下，又是为了什么呢？</div>
+  </div>
+
+  <!-- 输入区 -->
+  <div class="inputbar">
+    <input id="say" type="text" placeholder="对她说点什么……" autocomplete="off">
+    <button id="send">说</button>
+  </div>
+
+<script>
+/* 这一版还没有后端。
+   点「说」只是把你写的话贴进对话区，她的回应先空着。
+   等 web.py 接上，这个函数里换成 fetch('/chat') 就行。 */
+const box   = document.getElementById('dialogue');
+const input = document.getElementById('say');
+const send  = document.getElementById('send');
+
+function say(text){
+  const t = text.trim();
+  if(!t) return;
+
+  const mine = document.createElement('div');
+  mine.className = 'line you';
+  mine.textContent = t;
+  box.appendChild(mine);
+
+  const wait = document.createElement('div');
+  wait.className = 'line thinking';
+  wait.textContent = '· · ·';
+  box.appendChild(wait);
+
+  box.scrollTop = box.scrollHeight;
+  input.value = '';
+
+  /* 把这句话送出去，等她的回话 */
+  fetch('/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text: t })
+  })
+  .then(res => res.json())
+  .then(data => {
+    wait.remove();
+    const hers = document.createElement('div');
+    hers.className = 'line her';
+    hers.textContent = data.reply;
+    box.appendChild(hers);
+    box.scrollTop = box.scrollHeight;
+  })
+  .catch(() => {
+    wait.remove();
+    const hers = document.createElement('div');
+    hers.className = 'line her';
+    hers.textContent = '（连不上后台，server.py 还开着吗？）';
+    box.appendChild(hers);
+    box.scrollTop = box.scrollHeight;
+  });  
+ }
+
+send.addEventListener('click', () => say(input.value));
+input.addEventListener('keydown', e => {
+  if(e.key === 'Enter') say(input.value);
+});
+
+/* ---- 擦本子 ---- */
+const forget = document.getElementById('forget');
+
+forget.addEventListener('click', () => {
+  /* 先挂一句「……」，手上有反应，不至于以为没点到 */
+  const tip = document.createElement('div');
+  tip.className = 'line sys';
+  tip.textContent = '……';
+  box.appendChild(tip);
+  box.scrollTop = box.scrollHeight;
+
+  fetch('/reset')
+    .then(res => res.json())
+    .then(() => {
+      /* 后台真的清了，才把屏幕也擦掉 */
+      box.innerHTML = '';
+      input.value = '';
+      const done = document.createElement('div');
+      done.className = 'line sys';
+      done.textContent = '（本子擦干净了，她什么都不记得了）';
+      box.appendChild(done);
+    })
+    .catch(() => {
+      tip.textContent = '（没擦成，server.py 还开着吗？）';
+    });
+});
+</script>
+
+</body>
+</html>
